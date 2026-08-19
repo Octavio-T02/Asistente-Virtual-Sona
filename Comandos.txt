@@ -1,0 +1,101 @@
+======================================================================
+         LISTA COMPLETA DE COMANDOS EXACTOS PARA EL SCRIPT
+======================================================================
+
+[1] CONTROL DE VENTANA (BLOQUEO Y DESBLOQUEO)
+----------------------------------------------------------------------
+• fijar
+• bloquear posicion
+• no te muevas
+• quedate ahi
+• desbloquear
+• desfijar
+• muevete
+• muévete
+• desbloquear posicion
+
+[2] APLICACIONES Y ATAJOS
+----------------------------------------------------------------------
+• abre la terminal
+• abrir terminal
+• abre el navegador
+• abrir navegador
+* Cualquier clave configurada en atajos.json
+
+[3] PROCESOS Y RECURSOS DEL SISTEMA
+----------------------------------------------------------------------
+• dime el consumo de recursos, que consume tanta ram
+• procesos pesados
+• top ram
+• quien consume ram
+• estado del sistema
+• cómo está el sistema
+• uso de ram
+• cierra [nombre]
+• mata [nombre]
+• matar [nombre]
+
+[4] NOTAS Y PENDIENTES
+----------------------------------------------------------------------
+• anota: [tarea]
+• agregar pendiente: [tarea]
+• mis pendientes
+• que tengo pendiente
+• ver pendientes
+• limpiar pendientes
+• borrar pendientes
+• vaciar pendientes
+
+[5] RECORDATORIOS Y TIEMPO
+----------------------------------------------------------------------
+• recuerdame en [N] minutos [mensaje]
+• que hora es
+• qué fecha es
+
+[6] CAPTURA DE PANTALLA Y ASPECTO
+----------------------------------------------------------------------
+• captura de pantalla
+• toma una captura
+• haz una captura
+• screenshot
+• cambio de look
+• cambia de ropa
+• cambiar de look
+
+[7] SALUDOS
+----------------------------------------------------------------------
+• holis
+• olis
+• hola
+• buenas
+• que tal
+• konnichiwa
+• ohayo
+• buenos dias
+• buenas tardes
+• buenas noches
+
+[8] ESTADO DE ÁNIMO Y CORTESÍA
+----------------------------------------------------------------------
+• como estas
+• cómo te sientes
+• que tal estas
+• gracias
+• muchas gracias
+• arigato
+• te lo agradezco
+
+[9] DESPEDIDAS Y CUMPLIDOS
+----------------------------------------------------------------------
+• chao
+• adios
+• hasta luego
+• nos vemos
+• sayonara, bye
+• linda
+• bonita
+• tierna
+• buena asistente
+• kawaii
+• te quiero
+======================================================================
