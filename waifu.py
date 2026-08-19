@@ -273,13 +273,13 @@ class MascotaDesktop(QWidget):
         ms = int(minutos * 60 * 1000)
 
         def _notificar():
-            texto_alerta = f"⏰ Recordatorio programado: {mensaje}"
+            texto_alerta = f"Recordatorio programado: {mensaje}"
             self.cambiar_estado("feliz")
             self.mostrar_texto_animado(texto_alerta)
             self.hablar_en_hilo(f"Recordatorio: {mensaje}.")
 
         QTimer.singleShot(ms, _notificar)
-        return f"Recordatorio establecido. Se le notificará en {minutos} minutos sobre '{mensaje}'."
+        return f"Recordatorio establecido. Te notificaré en {minutos} minutos sobre '{mensaje}'."
 
     def cambiar_estado(self, estado):
         if self.bloqueo_look:
@@ -421,7 +421,7 @@ class MascotaDesktop(QWidget):
             except Exception:
                 pendientes = []
 
-        if "anota:" in cmd or "agregar pendiente:" in cmd:
+        if "anota" in cmd or "agregar pendiente:" in cmd:
             self.cambiar_estado("feliz")
             tarea = cmd.split(":", 1)[1].strip()
             if tarea:
