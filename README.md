@@ -38,4 +38,4 @@
 **Linux (Debian / Ubuntu / Mint):**
 ```bash
 sudo apt update
-sudo apt install python3-pyaudio portaudio19-dev xfce4-screenshooter playerctl
+sudo apt install python3-pyaudio portaudio19-dev playerctl
