@@ -68,6 +68,7 @@ class MascotaDesktop(QWidget):
         # --- DETECCIÓN DE MÚSICA (MPRIS) ---
         self.current_song = ""
         self.is_playing_music = False
+        self.is_talking = False
 
         # --- MÁQUINA DE ESCRIBIR (TYPING EFFECT 20 ms) ---
         self.texto_completo_animacion = ""
@@ -105,8 +106,8 @@ class MascotaDesktop(QWidget):
 
         # Configuración del modelo IA de asistencia
         self.system_instruction = (
-            "Eres un asistente virtual de escritorio profesional, formal y eficiente. "
-            "Tu prioridad es responder a las preguntas del usuario de forma clara, concisa, respetuosa y precisa."
+            "Eres un asistente virtual llamada Sona de escritorio profesional, formal y eficiente."
+            "Tu prioridad es responder a las preguntas del usuario de forma clara, concisa, respetuosa, precisa y con alegria."
         )
         self._inicializar_chat()
 
@@ -296,7 +297,8 @@ class MascotaDesktop(QWidget):
         self.avatar_label.setText(f"[{estado.capitalize()}]")
 
     def activar_modo_sueno(self):
-        if self.is_playing_music:
+        if self.is_playing_music or self.is_talking or self.timer_escritura.isActive():
+            self.timer_inactividad.start()
             return
 
         self.bloqueo_look = False
@@ -330,6 +332,7 @@ class MascotaDesktop(QWidget):
 
     def hablar_en_hilo(self, texto):
         def _hablar():
+            self.is_talking = True
             try:
                 import asyncio
                 import edge_tts
@@ -355,6 +358,8 @@ class MascotaDesktop(QWidget):
                     pygame.mixer.quit()
             except Exception as e:
                 print(f"Error en síntesis de voz: {e}")
+            finally:
+                self.is_talking = False
 
         threading.Thread(target=_hablar, daemon=True).start()
 
