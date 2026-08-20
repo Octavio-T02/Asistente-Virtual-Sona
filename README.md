@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/PyQt5-41CD52?style=for-the-badge&logo=qt&logoColor=white" />
 
-  <p><i>Asistente flotante interactiva multiplataforma con personalidad Tsundere, integrada con Gemini 2.5 Flash, TTS neuronal, control multimedia MPRIS y monitoreo de sistema.</i></p>
+  <p><i>Asistente flotante interactiva multiplataforma, integrada con Gemini 3.1 Flash Lite, TTS neuronal, control multimedia MPRIS y monitoreo de sistema.</i></p>
 
 </div>
 
