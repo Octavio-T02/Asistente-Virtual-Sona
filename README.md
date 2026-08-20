@@ -13,7 +13,7 @@
 
 ## ✨ Características Principales
 
-**Mover la de lugar: alt + click izquierdo**
+**Mover la de lugar: shift izquierdo + click izquierdo**
 * 🧠 **IA Integrada (Gemini 2.5 Flash):** Respuestas avanzadas con personalidad Tsundere.
 * 🎧 **Detección de Música en Vivo (MPRIS / `playerctl`):** Muestra automáticamente la canción en reproducción (`♫ título - artista ♪`), cambia el estado a *feliz* y desactiva el modo sueño mientras suena música.
 * 🗣️ **Voz Neuronal Anime (`edge-tts` + `pygame`):** Síntesis de voz en tiempo real con la voz `es-MX-DaliaNeural` ejecutada en hilos secundarios para no congelar la interfaz gráfica.
