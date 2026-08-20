@@ -14,7 +14,7 @@
 ## ✨ Características Principales
 
 **Mover la de lugar: shift izquierdo + click izquierdo**
-* 🧠 **IA Integrada (Gemini 2.5 Flash):** Respuestas avanzadas con personalidad Tsundere.
+* 🧠 **IA Integrada (Gemini 3.1 Flash Lite).**
 * 🎧 **Detección de Música en Vivo (MPRIS / `playerctl`):** Muestra automáticamente la canción en reproducción (`♫ título - artista ♪`), cambia el estado a *feliz* y desactiva el modo sueño mientras suena música.
 * 🗣️ **Voz Neuronal Anime (`edge-tts` + `pygame`):** Síntesis de voz en tiempo real con la voz `es-MX-DaliaNeural` ejecutada en hilos secundarios para no congelar la interfaz gráfica.
 * 💬 **Globo Manga con Efecto Máquina de Escribir:** Interfaz con renderizado personalizado tipo cómic/anime (`GloboTexto`) y animación de mecanografía a 20 ms.
