@@ -513,7 +513,7 @@ class MascotaDesktop(QWidget):
         cmd = prompt.lower().strip()
 
         # Comandos para cambio de personalidad
-        if any(k in cmd for k in ["cambiar personalidad", "cambia a personalidad", "modo personalidad"]):
+        if "personalidad" in cmd or any(f"modo {p}" in cmd for p in self.personalidades.keys()):
             for p in self.personalidades.keys():
                 if p in cmd:
                     return self.cambiar_personalidad(p)
