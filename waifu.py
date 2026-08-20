@@ -304,7 +304,7 @@ class MascotaDesktop(QWidget):
         self.bloqueo_look = False
         self.cambiar_estado("durmiendo")
         self.bloqueo_look = True
-        self.mostrar_texto_animado("Sistema en modo de reposo por inactividad.")
+        self.mostrar_texto_animado("Dormiré un rato mientras vuelves.... Zzz...")
 
     def mostrar_texto_animado(self, texto):
         self.timer_escritura.stop()
@@ -328,7 +328,7 @@ class MascotaDesktop(QWidget):
         hora_actual = time.localtime().tm_hour
         if hora_actual >= 22 or hora_actual < 6:
             self.cambiar_estado("durmiendo")
-            self.mostrar_texto_animado("Horario nocturno detectado. El asistente se encuentra en modo reposo.")
+            self.mostrar_texto_animado("Oyasumi... Es de noche, deberias descansar.")
 
     def hablar_en_hilo(self, texto):
         def _hablar():
@@ -443,7 +443,7 @@ class MascotaDesktop(QWidget):
         elif any(k in cmd for k in ["mis pendientes", "que tengo pendiente", "ver pendientes"]):
             self.cambiar_estado("feliz")
             if not pendientes:
-                return "No tiene tareas pendientes registradas en este momento."
+                return "No tienes tareas pendientes registradas en este momento."
             lista = "\n• " + "\n• ".join(pendientes)
             return f"Tareas pendientes actuales:{lista}"
 
@@ -451,7 +451,7 @@ class MascotaDesktop(QWidget):
             self.cambiar_estado("feliz")
             with open(ruta_json, "w", encoding="utf-8") as f:
                 json.dump([], f)
-            return "Se han eliminado todas las tareas pendientes."
+            return "He eliminado tus tareas pendientes."
 
         return None    
 
@@ -503,20 +503,20 @@ class MascotaDesktop(QWidget):
         if any(cmd == s for s in saludos) or any(cmd.startswith(s + " ") for s in saludos):
             self.cambiar_estado("feliz")
             return random.choice([
-                "Saludos. ¿En qué le puedo asistir el día de hoy?",
-                "Hola. Estoy a su disposición para colaborar en sus tareas.",
-                "Buenos días. ¿Qué comando requiere ejecutar?"
+                "Saludos. ¿En qué te puedo ayudar el día de hoy?",
+                "Hola. Estoy a tu disposición para ayudarte en tus tareas.",
+                "Buenos días. ¿Que haremos hoy?"
             ])
 
         estado_preguntas = ["como estas", "cómo estás", "como te sientes", "cómo te sientes", "que tal estas"]
         if any(k in cmd for k in estado_preguntas):
             self.cambiar_estado("feliz") 
-            return "El sistema se encuentra funcionando al 100% de su capacidad. ¿En qué puedo ayudarle?"
+            return "Estoy funcionando al 100%. ¿En qué te puedo ayudar?"
 
         agradecimientos = ["gracias", "muchas gracias", "arigato", "arigatou", "te lo agradezco"]
         if any(k in cmd for k in agradecimientos):
             self.cambiar_estado("feliz")
-            return "Es un placer asistirle. Quedo a la espera de sus instrucciones."
+            return "Es un placer ayudarte. Quedo a la espera de sus instrucciones."
 
         despedidas = ["chao", "adios", "adiós", "hasta luego", "nos vemos", "sayonara, bye"]
         if any(cmd == d for d in despedidas):
@@ -525,7 +525,7 @@ class MascotaDesktop(QWidget):
 
         if any(k in cmd for k in ["linda", "bonita", "tierna", "buena asistente", "kawaii", "te quiero"]):
             self.cambiar_estado("sonrojada")
-            return "Agradezco sus comentarios. Trabajaré para seguir brindando un servicio óptimo."
+            return "Agradezco tus halagos. Trabajaré para seguir brindando un servicio óptimo."
 
         if "cambio de look" in cmd or "cambia de ropa" in cmd or "cambiar de look" in cmd:
             return self.ejecutar_cambio_de_look()
