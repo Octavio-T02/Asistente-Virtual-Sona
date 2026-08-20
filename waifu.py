@@ -65,7 +65,7 @@ class MascotaDesktop(QWidget):
         self.posicion_fijada = False  # Estado de bloqueo de posición
         self.arrastrando = False     # Control de arrastre con Shift
 
-        # --- DETECCIÓN DE MÚSICA (MPRIS) ---
+        # --- DETECCIÓN DE MÚSICA (MPRIS) Y ESTADO ---
         self.current_song = ""
         self.is_playing_music = False
         self.is_talking = False
@@ -104,11 +104,32 @@ class MascotaDesktop(QWidget):
         self.bloqueo_look = False
         self.inactivo = False
 
-        # Configuración del modelo IA de asistencia
-        self.system_instruction = (
-            "Eres un asistente virtual llamada Sona de escritorio profesional, formal y eficiente."
-            "Tu prioridad es responder a las preguntas del usuario de forma clara, concisa, respetuosa, precisa y con alegria."
-        )
+        # --- CONFIGURACIÓN DE PERSONALIDADES DE IA ---
+        self.personalidades = {
+            "formal": (
+                "Eres un asistente virtual de escritorio profesional, formal y eficiente. "
+                "Tu prioridad es responder a las preguntas del usuario de forma clara, concisa y respetuosa. "
+                "Responde siempre en 1 o 2 oraciones muy cortas (máximo 30 palabras)."
+            ),
+            "amigable": (
+                "Eres una mascota de escritorio alegre, dulce y entusiasta. "
+                "Respondes de forma cariñosa, positiva y muy cercana al usuario. "
+                "Responde siempre en 1 o 2 oraciones muy cortas (máximo 30 palabras)."
+            ),
+            "estudiosa": (
+                "Eres una estudiante analítica, disciplinada, elegante y paciente. "
+                "Respondes con precisión, tono intelectual y estructurado. "
+                "Responde siempre en 1 o 2 oraciones muy cortas (máximo 30 palabras)."
+            ),
+            "tsundere": (
+                "Eres una mascota de escritorio tsundere. Te cuesta admitir tus sentimientos, "
+                "actúas de forma cortante, distante y fácil de avergonzar o molestar, pero en el fondo te importa el usuario. "
+                "Sueles poner excusas absurdas para disimular que ayudas ('¡No es como si lo hiciera por ti!'). "
+                "Responde siempre en 1 o 2 oraciones muy cortas (máximo 30 palabras)."
+            )
+        }
+        self.personalidad_actual = "formal"
+        self.system_instruction = self.personalidades[self.personalidad_actual]
         self._inicializar_chat()
 
         self.oldPos = QPoint()
@@ -140,12 +161,24 @@ class MascotaDesktop(QWidget):
                 model="gemini-3.1-flash-lite",
                 config={
                     "system_instruction": self.system_instruction,
-                    "max_output_tokens": 300
+                    "max_output_tokens": 100
                 }
             )
         except Exception as e:
             print(f"[ERROR INICIALIZACIÓN API] {e}")
             self.chat = None
+
+    def cambiar_personalidad(self, nombre):
+        nombre = nombre.lower().strip()
+        if nombre in self.personalidades:
+            self.personalidad_actual = nombre
+            self.system_instruction = self.personalidades[nombre]
+            self._inicializar_chat()
+            self.cambiar_estado("feliz")
+            return f"Personalidad actualizada a '{nombre.capitalize()}'."
+        
+        lista_opciones = ", ".join(self.personalidades.keys())
+        return f"La personalidad '{nombre}' no existe. Opciones disponibles: {lista_opciones}."
 
     def initUI(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.SubWindow)
@@ -337,25 +370,46 @@ class MascotaDesktop(QWidget):
                 import asyncio
                 import edge_tts
                 import pygame
+                import re
+                import tempfile
 
                 VOZ = "es-MX-DaliaNeural"
 
+                # 1. Limpieza directa e infalible de cualquier tipo de asterisco
+                texto_limpio = texto.replace('*', '').replace('＊', '')
+
+                # 2. Eliminar otros símbolos de formato Markdown y viñetas
+                texto_limpio = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', texto_limpio)
+                texto_limpio = re.sub(r'[_#`~•\-–—\\]', ' ', texto_limpio)
+                texto_limpio = re.sub(r'\s+', ' ', texto_limpio).strip()
+
+                print(f"[DEBUG VOZ]: {texto_limpio}")
+
+                # 3. Archivo temporal único con timestamp para evitar re-leer audios viejos en caché
+                ruta_temp = os.path.join(tempfile.gettempdir(), f"mascota_voz_{int(time.time() * 1000)}.mp3")
+
                 async def _generar_audio():
-                    communicate = edge_tts.Communicate(texto, VOZ, rate="+0%", pitch="+0Hz")
-                    await communicate.save("/tmp/mascota_voz.mp3")
+                    communicate = edge_tts.Communicate(texto_limpio, VOZ, rate="+0%", pitch="+20Hz")
+                    await communicate.save(ruta_temp)
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(_generar_audio())
                 loop.close()
 
-                if os.path.exists("/tmp/mascota_voz.mp3"):
+                if os.path.exists(ruta_temp):
                     pygame.mixer.init()
-                    pygame.mixer.music.load("/tmp/mascota_voz.mp3")
+                    pygame.mixer.music.load(ruta_temp)
                     pygame.mixer.music.play()
                     while pygame.mixer.music.get_busy():
                         time.sleep(0.05)
                     pygame.mixer.quit()
+
+                    try:
+                        os.remove(ruta_temp)
+                    except Exception:
+                        pass
+
             except Exception as e:
                 print(f"Error en síntesis de voz: {e}")
             finally:
@@ -458,6 +512,15 @@ class MascotaDesktop(QWidget):
     def procesar_comando_sistema(self, prompt):
         cmd = prompt.lower().strip()
 
+        # Comandos para cambio de personalidad
+        if any(k in cmd for k in ["cambiar personalidad", "cambia a personalidad", "modo personalidad"]):
+            for p in self.personalidades.keys():
+                if p in cmd:
+                    return self.cambiar_personalidad(p)
+            
+            opciones = ", ".join(self.personalidades.keys())
+            return f"Personalidad actual: {self.personalidad_actual.capitalize()}. Opciones disponibles: {opciones}."
+
         # Revisar Procesos y RAM
         res_proceso = self._gestionar_procesos(cmd)
         if res_proceso:
@@ -505,7 +568,7 @@ class MascotaDesktop(QWidget):
             return random.choice([
                 "Saludos. ¿En qué te puedo ayudar el día de hoy?",
                 "Hola. Estoy a tu disposición para ayudarte en tus tareas.",
-                "Buenos días. ¿Que haremos hoy?"
+                "Buenos días. ¿Qué haremos hoy?"
             ])
 
         estado_preguntas = ["como estas", "cómo estás", "como te sientes", "cómo te sientes", "que tal estas"]
@@ -518,7 +581,7 @@ class MascotaDesktop(QWidget):
             self.cambiar_estado("feliz")
             return "Es un placer ayudarte. Quedo a la espera de sus instrucciones."
 
-        despedidas = ["chao", "adios", "adiós", "hasta luego", "nos vemos", "sayonara, bye"]
+        despedidas = ["chao", "adios", "adiós", "hasta luego", "nos vemos", "sayonara", "bye"]
         if any(cmd == d for d in despedidas):
             self.cambiar_estado("durmiendo")
             return "Hasta luego. Que tenga una excelente jornada."
@@ -593,22 +656,27 @@ class MascotaDesktop(QWidget):
             self.hablar_en_hilo(respuesta_local)
             return
 
-        # 2. Envío a la API
+        # 2. Envío a la API con streaming
         print(f"[API GEMINI] Consultando: '{prompt}'")
         self.cambiar_estado("pensando")
         self.input_text.setEnabled(False)
-        self.mostrar_texto_animado("Procesando consulta...")
+        self.dialogo_label.setText("")
 
         try:
             if not self.chat:
                 raise Exception("La API Key no está configurada o es inválida.")
 
-            response = self.chat.send_message(prompt)
-            texto_respuesta = response.text
+            response = self.chat.send_message_stream(prompt)
+            texto_respuesta = ""
+            
+            for chunk in response:
+                if chunk.text:
+                    texto_respuesta += chunk.text
+                    self.dialogo_label.setText(texto_respuesta)
+                    QApplication.processEvents()
 
             print("[API GEMINI] Respuesta recibida correctamente.")
             self.cambiar_estado("feliz")
-            self.mostrar_texto_animado(texto_respuesta)
             self.hablar_en_hilo(texto_respuesta)
 
         except Exception as e:
