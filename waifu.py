@@ -135,7 +135,7 @@ class MascotaDesktop(QWidget):
         try:
             self.client = genai.Client(api_key=API_KEY)
             self.chat = self.client.chats.create(
-                model="gemini-2.5-flash",
+                model="gemini-3.1-flash-lite",
                 config={
                     "system_instruction": self.system_instruction,
                     "max_output_tokens": 300
