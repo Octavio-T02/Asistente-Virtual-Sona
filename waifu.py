@@ -63,6 +63,7 @@ class MascotaDesktop(QWidget):
         super().__init__()
 
         self.posicion_fijada = False  # Estado de bloqueo de posición
+        self.arrastrando = False     # Control de arrastre con Shift
 
         # --- DETECCIÓN DE MÚSICA (MPRIS) ---
         self.current_song = ""
@@ -357,19 +358,23 @@ class MascotaDesktop(QWidget):
 
         threading.Thread(target=_hablar, daemon=True).start()
 
+    # --- EVENTOS DE RATÓN (REQUISITO: SHIFT + CLIC IZQUIERDO PARA MOVER) ---
     def mousePressEvent(self, event):
-        if self.posicion_fijada:
-            return
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ShiftModifier):
+            self.arrastrando = True
             self.oldPos = event.globalPos()
+        else:
+            self.arrastrando = False
 
     def mouseMoveEvent(self, event):
-        if self.posicion_fijada:
-            return
-        if event.button() == Qt.LeftButton:
+        if self.arrastrando and (event.buttons() & Qt.LeftButton):
             delta = QPoint(event.globalPos() - self.oldPos)
             self.move(self.x() + delta.x(), self.y() + delta.y())
             self.oldPos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.arrastrando = False
 
     def _gestionar_procesos(self, cmd):
         claves_ram = [
