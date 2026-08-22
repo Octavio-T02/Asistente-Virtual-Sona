@@ -8,10 +8,10 @@ import threading
 import psutil
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
-    QScrollArea
+    QScrollArea, QGraphicsOpacityEffect, QSystemTrayIcon, QMenu, QAction
 )
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QPolygon
-from PyQt5.QtCore import Qt, QPoint, QTimer
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QPolygon, QIcon
+from PyQt5.QtCore import Qt, QPoint, QTimer, QPropertyAnimation
 from google import genai
 
 # --- CONFIGURACIÓN DE API KEY ---
@@ -113,8 +113,7 @@ class MascotaDesktop(QWidget):
             ),
             "amigable": (
                 "Eres una mascota de escritorio alegre, dulce y entusiasta. "
-                "Respondes de forma cariñosa, positiva y muy cercana al usuario. "
-                "Responde siempre en 1 o 2 oraciones muy cortas (máximo 30 palabras)."
+                "Respondes de forma muy cariñosa y positiva, pero siempre en máximo 1 o 2 oraciones súper cortas y directas al grano."
             ),
             "estudiosa": (
                 "Eres una estudiante analítica, disciplinada, elegante y paciente. "
@@ -134,6 +133,8 @@ class MascotaDesktop(QWidget):
 
         self.oldPos = QPoint()
         self.initUI()
+        self.init_menu()
+        self.init_tray()
         self.cargar_atajos_custom()
 
         # Temporizador de inactividad (60 segundos)
@@ -149,6 +150,147 @@ class MascotaDesktop(QWidget):
         self.music_timer.start()
 
         self.comprobar_modo_noche()
+
+    def init_menu(self):
+        """Inicializa el menú contextual estilizado para el personaje"""
+        self.menu_contextual = QMenu(self)
+        
+        estilo_menu = """
+            QMenu {
+                background-color: #1e1e2e;
+                color: #cdd6f4;
+                border: 1px solid #b4befe;
+                border-radius: 8px;
+                padding: 5px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 6px 22px 6px 12px;
+                border-radius: 4px;
+                margin: 2px;
+                font-size: 12px;
+            }
+            QMenu::item:selected {
+                background-color: #313244;
+                color: #89b4fa;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #45475a;
+                margin: 4px 6px;
+            }
+        """
+        self.menu_contextual.setStyleSheet(estilo_menu)
+
+        action_toggle = QAction("Ocultar mascota", self)
+        action_toggle.triggered.connect(self.toggle_visibilidad)
+        self.menu_contextual.addAction(action_toggle)
+
+        action_fijar = QAction("Fijar / Desbloquear posición", self)
+        action_fijar.triggered.connect(self.toggle_fijar_posicion)
+        self.menu_contextual.addAction(action_fijar)
+
+        menu_personalidad = self.menu_contextual.addMenu("Personalidad")
+        menu_personalidad.setStyleSheet(estilo_menu)
+        for p in self.personalidades.keys():
+            action_p = QAction(p.capitalize(), self)
+            action_p.triggered.connect(lambda checked, nombre=p: self.cambiar_personalidad_tray(nombre))
+            menu_personalidad.addAction(action_p)
+
+        action_look = QAction("Cambiar Look", self)
+        action_look.triggered.connect(self.ejecutar_cambio_de_look_tray)
+        self.menu_contextual.addAction(action_look)
+
+        self.menu_contextual.addSeparator()
+
+        action_salir = QAction("Salir", self)
+        action_salir.triggered.connect(QApplication.quit)
+        self.menu_contextual.addAction(action_salir)
+
+    def contextMenuEvent(self, event):
+        """Muestra el menú contextual al hacer clic derecho sobre el widget"""
+        self.menu_contextual.exec_(event.globalPos())
+
+    def init_tray(self):
+        """Icono del System Tray con menú simplificado (Mostrar/Ocultar y Salir)"""
+        icono_path = self.rutas_imagenes.get("normal", "")
+        if os.path.exists(icono_path):
+            self.tray_icon = QSystemTrayIcon(QIcon(icono_path), self)
+        else:
+            self.tray_icon = QSystemTrayIcon(self)
+
+        # Crear menú específico para la bandeja del sistema
+        self.tray_menu = QMenu(self)
+        
+        estilo_tray_menu = """
+            QMenu {
+                background-color: #1e1e2e;
+                color: #cdd6f4;
+                border: 1px solid #b4befe;
+                border-radius: 8px;
+                padding: 5px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 6px 22px 6px 12px;
+                border-radius: 4px;
+                margin: 2px;
+                font-size: 12px;
+            }
+            QMenu::item:selected {
+                background-color: #313244;
+                color: #89b4fa;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #45475a;
+                margin: 4px 6px;
+            }
+        """
+        self.tray_menu.setStyleSheet(estilo_tray_menu)
+
+        # Opción 1: Mostrar / Ocultar
+        action_toggle = QAction("Mostrar / Ocultar", self)
+        action_toggle.triggered.connect(self.toggle_visibilidad)
+        self.tray_menu.addAction(action_toggle)
+
+        self.tray_menu.addSeparator()
+
+        # Opción 2: Salir
+        action_salir = QAction("Salir", self)
+        action_salir.triggered.connect(QApplication.quit)
+        self.tray_menu.addAction(action_salir)
+
+        # Asignar el menú al icono de la bandeja
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.show()
+
+    def toggle_visibilidad(self):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
+            self.raise_()
+            self.activateWindow()
+
+    def toggle_fijar_posicion(self):
+        self.posicion_fijada = not self.posicion_fijada
+        estado = "fijada" if self.posicion_fijada else "desbloqueada"
+        self.mostrar_texto_animado(f"Posición {estado}.")
+
+    def cambiar_personalidad_tray(self, nombre):
+        res = self.cambiar_personalidad(nombre)
+        self.mostrar_texto_animado(res)
+        self.hablar_en_hilo(res)
+
+    def ejecutar_cambio_de_look_tray(self):
+        res = self.ejecutar_cambio_de_look()
+        self.mostrar_texto_animado(res)
+
+    def on_tray_icon_activated(self, reason):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+            self.toggle_visibilidad()
 
     def _inicializar_chat(self):
         if not API_KEY or API_KEY == "TU_API_KEY_AQUI":
@@ -188,6 +330,17 @@ class MascotaDesktop(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.globo = GloboTexto(self)
+
+        self.globo_opacity = QGraphicsOpacityEffect(self.globo)
+        self.globo.setGraphicsEffect(self.globo_opacity)
+        self.globo_opacity.setOpacity(1.0)
+
+        self.anim_globo = QPropertyAnimation(self.globo_opacity, b"opacity")
+        self.anim_globo.setDuration(1000)
+
+        self.timer_desvanecer = QTimer(self)
+        self.timer_desvanecer.setSingleShot(True)
+        self.timer_desvanecer.timeout.connect(self._desvanecer_globo)
 
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
@@ -236,8 +389,28 @@ class MascotaDesktop(QWidget):
         self.setLayout(layout)
 
         self.move(100, 100)
+        self.timer_desvanecer.start(6000)
 
-    # --- CONSULTA MPRIS / PLAYERCTL ---
+    def mostrar_globo(self):
+        self.timer_desvanecer.stop()
+        self.globo.show()
+
+        self.anim_globo.stop()
+        self.anim_globo.setStartValue(self.globo_opacity.opacity())
+        self.anim_globo.setEndValue(1.0)
+        self.anim_globo.start()
+
+    def _desvanecer_globo(self):
+        if self.is_talking:
+            self.timer_desvanecer.setInterval(1000)
+            self.timer_desvanecer.start()
+            return
+
+        self.anim_globo.stop()
+        self.anim_globo.setStartValue(self.globo_opacity.opacity())
+        self.anim_globo.setEndValue(0.0)
+        self.anim_globo.start()
+
     def check_mpris_music(self):
         if self.timer_escritura.isActive():
             return
@@ -340,6 +513,7 @@ class MascotaDesktop(QWidget):
         self.mostrar_texto_animado("Dormiré un rato mientras vuelves.... Zzz...")
 
     def mostrar_texto_animado(self, texto):
+        self.mostrar_globo()
         self.timer_escritura.stop()
         self.texto_completo_animacion = texto
         self.indice_caracter_animacion = 0
@@ -356,6 +530,7 @@ class MascotaDesktop(QWidget):
             self.indice_caracter_animacion += 1
         else:
             self.timer_escritura.stop()
+            self.timer_desvanecer.start(6000)
 
     def comprobar_modo_noche(self):
         hora_actual = time.localtime().tm_hour
@@ -364,8 +539,9 @@ class MascotaDesktop(QWidget):
             self.mostrar_texto_animado("Oyasumi... Es de noche, deberias descansar.")
 
     def hablar_en_hilo(self, texto):
+        self.is_talking = True
+
         def _hablar():
-            self.is_talking = True
             try:
                 import asyncio
                 import edge_tts
@@ -375,17 +551,11 @@ class MascotaDesktop(QWidget):
 
                 VOZ = "es-MX-DaliaNeural"
 
-                # 1. Limpieza directa e infalible de cualquier tipo de asterisco
                 texto_limpio = texto.replace('*', '').replace('＊', '')
-
-                # 2. Eliminar otros símbolos de formato Markdown y viñetas
                 texto_limpio = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', texto_limpio)
                 texto_limpio = re.sub(r'[_#`~•\-–—\\]', ' ', texto_limpio)
                 texto_limpio = re.sub(r'\s+', ' ', texto_limpio).strip()
 
-                print(f"[DEBUG VOZ]: {texto_limpio}")
-
-                # 3. Archivo temporal único con timestamp para evitar re-leer audios viejos en caché
                 ruta_temp = os.path.join(tempfile.gettempdir(), f"mascota_voz_{int(time.time() * 1000)}.mp3")
 
                 async def _generar_audio():
@@ -417,9 +587,8 @@ class MascotaDesktop(QWidget):
 
         threading.Thread(target=_hablar, daemon=True).start()
 
-    # --- EVENTOS DE RATÓN (REQUISITO: SHIFT + CLIC IZQUIERDO PARA MOVER) ---
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ShiftModifier):
+        if not self.posicion_fijada and event.button() == Qt.LeftButton and (event.modifiers() & Qt.ShiftModifier):
             self.arrastrando = True
             self.oldPos = event.globalPos()
         else:
@@ -487,7 +656,7 @@ class MascotaDesktop(QWidget):
 
         if "anota" in cmd or "agregar pendiente:" in cmd:
             self.cambiar_estado("feliz")
-            tarea = cmd.split(":", 1)[1].strip()
+            tarea = cmd.split(":", 1)[1].strip() if ":" in cmd else cmd.replace("anota", "").strip()
             if tarea:
                 pendientes.append(tarea)
                 with open(ruta_json, "w", encoding="utf-8") as f:
@@ -512,7 +681,6 @@ class MascotaDesktop(QWidget):
     def procesar_comando_sistema(self, prompt):
         cmd = prompt.lower().strip()
 
-        # Comandos para cambio de personalidad
         if "personalidad" in cmd or any(f"modo {p}" in cmd for p in self.personalidades.keys()):
             for p in self.personalidades.keys():
                 if p in cmd:
@@ -521,17 +689,14 @@ class MascotaDesktop(QWidget):
             opciones = ", ".join(self.personalidades.keys())
             return f"Personalidad actual: {self.personalidad_actual.capitalize()}. Opciones disponibles: {opciones}."
 
-        # Revisar Procesos y RAM
         res_proceso = self._gestionar_procesos(cmd)
         if res_proceso:
             return res_proceso
 
-        # Revisar Pendientes
         res_pendiente = self._gestionar_pendientes(cmd)
         if res_pendiente:
             return res_pendiente
         
-        # Comandos para fijar / desbloquear posición
         if any(k in cmd for k in ["fijar", "bloquear posicion", "no te muevas", "quedate ahi"]):
             self.posicion_fijada = True
             return "Posición fijada. Utilice 'desbloquear' para mover la ventana de nuevo."
@@ -540,7 +705,6 @@ class MascotaDesktop(QWidget):
             self.posicion_fijada = False
             return "Posición desbloqueada. Puede arrastrar la ventana libremente."
 
-        # Comandos de ejecución directa de aplicaciones
         if "abre la terminal" in cmd or "abrir terminal" in cmd:
             self.cambiar_estado("feliz") 
             subprocess.Popen(["kitty"])
@@ -561,7 +725,6 @@ class MascotaDesktop(QWidget):
                     self.cambiar_estado("triste")
                     return f"No se pudo iniciar '{alias}': {e}"
 
-        # Conversaciones normales / Saludos
         saludos = ["holis", "olis", "hola", "buenas", "que tal", "qué tal", "konnichiwa", "ohayo", "buenos dias", "buenas tardes", "buenas noches"]
         if any(cmd == s for s in saludos) or any(cmd.startswith(s + " ") for s in saludos):
             self.cambiar_estado("feliz")
@@ -648,7 +811,6 @@ class MascotaDesktop(QWidget):
         self.timer_inactividad.start()
         self.input_text.clear()
 
-        # 1. Filtro local
         respuesta_local = self.procesar_comando_sistema(prompt)
         if respuesta_local:
             print(f"[LOCAL] Comando procesado: '{prompt}'")
@@ -656,11 +818,11 @@ class MascotaDesktop(QWidget):
             self.hablar_en_hilo(respuesta_local)
             return
 
-        # 2. Envío a la API con streaming
         print(f"[API GEMINI] Consultando: '{prompt}'")
         self.cambiar_estado("pensando")
         self.input_text.setEnabled(False)
         self.dialogo_label.setText("")
+        self.mostrar_globo()
 
         try:
             if not self.chat:
@@ -678,6 +840,7 @@ class MascotaDesktop(QWidget):
             print("[API GEMINI] Respuesta recibida correctamente.")
             self.cambiar_estado("feliz")
             self.hablar_en_hilo(texto_respuesta)
+            self.timer_desvanecer.start(6000)
 
         except Exception as e:
             print(f"[ERROR API] {e}")
@@ -690,6 +853,7 @@ class MascotaDesktop(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     mascota = MascotaDesktop()
     mascota.show()
     sys.exit(app.exec_())
